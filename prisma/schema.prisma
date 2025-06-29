@@ -1,0 +1,30 @@
+// Prisma schema for PostgreSQL connection
+// Run `npx prisma init` after this to generate client and .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Place {
+  id      Int    @id @default(autoincrement())
+  name    String
+  placeId String @unique
+  votes   Int    @default(0)
+}
+
+model UserSubmission {
+  id             Int      @id @default(autoincrement())
+  name           String
+  address        String
+  description    String
+  latitude       Float
+  longitude      Float
+  submittedAt    DateTime @default(now())
+  approved       Boolean  @default(false)
+  submitterEmail String?
+}
