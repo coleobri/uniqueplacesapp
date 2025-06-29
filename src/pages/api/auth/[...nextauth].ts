@@ -1,5 +1,7 @@
+
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import type { Session } from "next-auth";
 
 export const authOptions = {
   providers: [
@@ -9,13 +11,14 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }: { user: { email?: string | null } }) {
       // Only allow specific emails or domains for admin
       const allowedEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
       if (allowedEmails.length === 0) return false;
-      return allowedEmails.includes(user.email?.toLowerCase() || "");
+      if (!user.email) return false;
+      return allowedEmails.includes(user.email.toLowerCase());
     },
-    async session({ session, token, user }) {
+    async session({ session }: { session: Session }) {
       // Add email to session for client-side checks
       return session;
     },

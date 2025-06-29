@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: { approved: approve },
     });
     res.status(200).json({ success: true, updated });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update submission" });
   }
 }

@@ -1,10 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
+
+interface Submission {
+  id: number;
+  name: string;
+  address: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  submitterEmail?: string;
+  approved: boolean;
+  submittedAt?: string;
+}
 import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);

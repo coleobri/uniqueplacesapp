@@ -1,15 +1,32 @@
 "use client";
 
-import Image from "next/image";
-import { useState, useEffect } from "react";
+
+
+import { useState, useEffect, FormEvent } from "react";
+
+interface Place {
+  id?: string;
+  place_id?: string;
+  displayName?: { text: string };
+  formattedAddress?: string;
+  description?: string;
+  location?: { latitude: number; longitude: number };
+  userSubmitted?: boolean;
+  _votes?: number;
+  rating?: number;
+  userRatingCount?: number;
+  websiteUri?: string;
+  googleMapsUri?: string;
+}
+
 
 export default function Home() {
   const [location, setLocation] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [randomLoading, setRandomLoading] = useState(false);
-  const [radius, setRadius] = useState(20); // miles
+  // const [radius, setRadius] = useState(20); // miles
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -23,16 +40,16 @@ export default function Home() {
     longitude: "",
     submitterEmail: ""
   });
-  const [votedPlaceIds, setVotedPlaceIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return JSON.parse(localStorage.getItem("votedPlaceIds") || "[]");
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  // const [votedPlaceIds, setVotedPlaceIds] = useState<string[]>(() => {
+  //   if (typeof window !== "undefined") {
+  //     try {
+  //       return JSON.parse(localStorage.getItem("votedPlaceIds") || "[]");
+  //     } catch {
+  //       return [];
+  //     }
+  //   }
+  //   return [];
+  // });
   const [userVotes, setUserVotes] = useState<Record<string, "up" | "down" | null>>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -46,12 +63,11 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("votedPlaceIds", JSON.stringify(votedPlaceIds));
       localStorage.setItem("userVotes", JSON.stringify(userVotes));
     }
-  }, [votedPlaceIds, userVotes]);
+  }, [userVotes]);
 
-  function getPlaceId(place: any) {
+  function getPlaceId(place: Place) {
     return (
       place.id ||
       place.place_id ||
@@ -59,7 +75,7 @@ export default function Home() {
     );
   }
 
-  async function handleVote(place: any, vote: "up" | "down") {
+  async function handleVote(place: Place, vote: "up" | "down") {
     const placeId = getPlaceId(place);
     const prevVote = userVotes[placeId];
     // If clicking the same vote, undo it
@@ -67,7 +83,7 @@ export default function Home() {
       setUserVotes((prev) => ({ ...prev, [placeId]: null }));
       setVotes((prev) => {
         const prevCount = prev[placeId] ?? place._votes ?? 0;
-        let newCount = prevCount + (vote === "up" ? -1 : 1);
+        const newCount = prevCount + (vote === "up" ? -1 : 1);
         return { ...prev, [placeId]: newCount };
       });
       // Send to backend (treat as opposite vote to undo)
@@ -83,9 +99,13 @@ export default function Home() {
     setVotes((prev) => {
       const prevCount = prev[placeId] ?? place._votes ?? 0;
       let newCount = prevCount;
-      if (prevVote === "up" && vote === "down") newCount = prevCount - 2;
-      else if (prevVote === "down" && vote === "up") newCount = prevCount + 2;
-      else if (!prevVote) newCount = prevCount + (vote === "up" ? 1 : -1);
+      if (prevVote === "up" && vote === "down") {
+        newCount = prevCount - 2;
+      } else if (prevVote === "down" && vote === "up") {
+        newCount = prevCount + 2;
+      } else if (!prevVote) {
+        newCount = prevCount + (vote === "up" ? 1 : -1);
+      }
       return { ...prev, [placeId]: newCount };
     });
     fetch("/api/vote", {
@@ -95,7 +115,7 @@ export default function Home() {
     });
   }
 
-  async function handleSearch(e: React.FormEvent) {
+  async function handleSearch(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -104,7 +124,7 @@ export default function Home() {
       const res = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: location, radiusMiles: radius }),
+    body: JSON.stringify({ query: location }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -112,7 +132,7 @@ export default function Home() {
       } else {
         setError(data.error || "Something went wrong");
       }
-    } catch (err) {
+    } catch {
       setError("Network error");
     } finally {
       setLoading(false);
@@ -162,7 +182,7 @@ export default function Home() {
       } else {
         setError("No cool places found. Try again!");
       }
-    } catch (err) {
+    } catch {
       setError("Network error");
     } finally {
       setRandomLoading(false);
@@ -191,7 +211,7 @@ export default function Home() {
       } else {
         setSubmitError(data.error || "Submission failed");
       }
-    } catch (err) {
+    } catch {
       setSubmitError("Network error");
     } finally {
       setSubmitLoading(false);

@@ -1,6 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 
+
+interface Place {
+  id?: string;
+  place_id?: string;
+  displayName?: { text: string };
+  formattedAddress?: string;
+  description?: string;
+  location?: { latitude: number; longitude: number };
+  userSubmitted?: boolean;
+  _votes?: number;
+  rating?: number;
+  userRatingCount?: number;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  types?: string[];
+}
+
 const prisma = new PrismaClient();
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.API_KEY || "";
@@ -11,14 +28,14 @@ const EXCLUDE_KEYWORDS = [
   "bar", "nightclub", "pub", "club", "hotel", "mall", "casino", "tourist", "resort", "chain", "fast food", "restaurant", "brewery", "winery", "liquor", "strip club", "convenience", "supermarket", "grocery", "pharmacy", "pharmacies", "bank", "atm", "car rental", "car dealership", "car wash", "gas station", "parking", "airport", "bus station", "train station", "subway", "transit", "taxi", "ferry", "cruise", "travel agency", "tour operator", "daycare", "party rental"
 ];
 
-function isUniquePlace(place: any) {
+function isUniquePlace(place: Place) {
   const name = (place.displayName?.text || "").toLowerCase();
   const types = (place.types || []).map((t: string) => t.toLowerCase());
   // Exclude if any keyword matches name or types
-  return !EXCLUDE_KEYWORDS.some((kw) => name.includes(kw) || types.some((t) => t.includes(kw)));
+  return !EXCLUDE_KEYWORDS.some((kw) => name.includes(kw) || types.some((t: string) => t.includes(kw)));
 }
 
-function getPlaceId(place: any) {
+function getPlaceId(place: Place) {
   return (
     place.id ||
     place.place_id ||
@@ -99,7 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       take: 50
     });
     // Map to Google-like format for frontend
-    const mappedUserPlaces = userPlaces.map((p: any) => ({
+    const mappedUserPlaces: Place[] = userPlaces.map((p) => ({
       displayName: { text: p.name },
       formattedAddress: p.address,
       description: p.description,
@@ -119,11 +136,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: { placeId: true, votes: true },
     });
     const voteMap: Record<string, number> = {};
-    dbVotes.forEach(v => { voteMap[v.placeId] = v.votes; });
+    dbVotes.forEach((v: { placeId: string; votes: number }) => { voteMap[v.placeId] = v.votes; });
     // Attach votes and sort by votes descending
-    uniquePlaces = uniquePlaces.map((p: any) => ({ ...p, _votes: voteMap[getPlaceId(p)] || 0 }));
-    const mappedUserPlacesWithVotes = mappedUserPlaces.map((p: any) => ({ ...p, _votes: voteMap[getPlaceId(p)] || 0 }));
-    uniquePlaces.sort((a: any, b: any) => b._votes - a._votes);
+    uniquePlaces = uniquePlaces.map((p: Place) => ({ ...p, _votes: voteMap[getPlaceId(p)] || 0 }));
+    const mappedUserPlacesWithVotes = mappedUserPlaces.map((p: Place) => ({ ...p, _votes: voteMap[getPlaceId(p)] || 0 }));
+    uniquePlaces.sort((a: Place, b: Place) => (b._votes ?? 0) - (a._votes ?? 0));
     // Pagination logic: 6 per page
     const allPlaces = [...mappedUserPlacesWithVotes, ...uniquePlaces];
     const page = typeof req.body.page === "number" && req.body.page > 0 ? req.body.page : 1;
@@ -137,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalPages,
       total
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch places" });
   }
 }

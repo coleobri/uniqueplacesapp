@@ -35,6 +35,7 @@ export default function RootLayout({
           <header className="w-full py-6 px-4 bg-[#273469] text-[#FAFAFF] flex flex-col items-center border-b border-[#E4D9FF]">
             <div className="max-w-4xl w-full flex flex-col sm:flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/globe.svg" alt="Globe" className="h-8 w-8" />
                 <span className="text-2xl font-bold tracking-tight">Unique Places App</span>
               </div>
