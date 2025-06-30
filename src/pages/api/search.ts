@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 
 
+
 interface Place {
   id?: string;
   place_id?: string;
@@ -154,7 +155,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalPages,
       total
     });
-  } catch {
+  } catch (error) {
+    console.error("API /search error:", error);
     res.status(500).json({ error: "Failed to fetch places" });
   }
 }
