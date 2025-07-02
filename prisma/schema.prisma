@@ -1,6 +1,3 @@
-// Prisma schema for PostgreSQL connection
-// Run `npx prisma init` after this to generate client and .env
-
 generator client {
   provider = "prisma-client-js"
 }
